@@ -9,7 +9,12 @@ export function generateEmbeddedHtml(
   const appId = 'edu-drag-' + Math.random().toString(36).substring(2, 9);
 
   // Color theme palettes
-  const themeStyles = getThemeCss(appId, settings.theme, settings.clickedCardColor);
+  const themeStyles = getThemeCss(
+    appId,
+    settings.theme,
+    settings.clickedCardColor,
+    settings.clickedCardTextColor
+  );
 
   const itemsJson = JSON.stringify(items);
   const settingsJson = JSON.stringify(settings);
@@ -66,7 +71,11 @@ ${getLayoutCss(appId, settings.layoutMode, items.length)}
   background: var(--edu-card-bg, #ffffff) !important;
   border: 1.5px solid var(--edu-card-border, #e2e8f0) !important;
   border-radius: ${Math.max(6, settings.borderRadius - 4)}px !important;
-  padding: 12px 14px !important;
+  padding: 10px 14px !important;
+  height: 60px !important;
+  min-height: 60px !important;
+  max-height: 60px !important;
+  box-sizing: border-box !important;
   cursor: grab !important;
   user-select: none !important;
   -webkit-user-select: none !important;
@@ -90,14 +99,32 @@ ${getLayoutCss(appId, settings.layoutMode, items.length)}
 }
 
 #${appId} .edu-card.is-active {
-  border-color: var(--edu-accent, #3b82f6) !important;
-  background-color: var(--edu-card-active, #eff6ff) !important;
+  border-color: var(--edu-card-active-border, #3b82f6) !important;
+  background-color: var(--edu-card-active, var(--edu-card-revealed, #e2e8f0)) !important;
+  color: var(--edu-card-active-text, #0f172a) !important;
   box-shadow: 0 0 0 2px var(--edu-accent, #3b82f6) !important;
 }
 
+#${appId} .edu-card.is-active .edu-card-title {
+  color: var(--edu-card-active-text, #0f172a) !important;
+}
+
+#${appId} .edu-card.is-active .edu-card-subtitle {
+  color: var(--edu-card-active-muted, #475569) !important;
+}
+
 #${appId} .edu-card.is-revealed {
-  border-color: var(--edu-card-revealed-border, #86efac) !important;
-  background-color: var(--edu-card-revealed, #f0fdf4) !important;
+  border-color: var(--edu-card-revealed-border, #cbd5e1) !important;
+  background-color: var(--edu-card-revealed, #e2e8f0) !important;
+  color: var(--edu-card-revealed-text, #0f172a) !important;
+}
+
+#${appId} .edu-card.is-revealed .edu-card-title {
+  color: var(--edu-card-revealed-text, #0f172a) !important;
+}
+
+#${appId} .edu-card.is-revealed .edu-card-subtitle {
+  color: var(--edu-card-revealed-muted, #475569) !important;
 }
 
 #${appId} .edu-card.has-accent-bg {
@@ -162,6 +189,7 @@ ${getLayoutCss(appId, settings.layoutMode, items.length)}
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03) !important;
 }
 
+#${appId} .edu-dropzone.is-media-only,
 #${appId} .edu-dropzone.is-image-only {
   border: none !important;
   border-width: 0 !important;
@@ -171,12 +199,25 @@ ${getLayoutCss(appId, settings.layoutMode, items.length)}
   box-shadow: none !important;
 }
 
+#${appId} .edu-dropzone.is-media-only img,
 #${appId} .edu-dropzone.is-image-only img {
   width: 100% !important;
   height: 100% !important;
   min-height: 280px !important;
   max-height: 520px !important;
   object-fit: cover !important;
+  border-radius: ${settings.borderRadius}px !important;
+  margin: 0 !important;
+  border: none !important;
+  padding: 0 !important;
+  display: block !important;
+}
+
+#${appId} .edu-dropzone.is-media-only iframe {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 280px !important;
+  aspect-ratio: 16 / 9 !important;
   border-radius: ${settings.borderRadius}px !important;
   margin: 0 !important;
   border: none !important;
@@ -265,22 +306,6 @@ ${getLayoutCss(appId, settings.layoutMode, items.length)}
   margin-top: 8px !important;
 }
 
-#${appId} .edu-progress-bar-wrap {
-  width: 100% !important;
-  height: 6px !important;
-  background: var(--edu-card-border, #e2e8f0) !important;
-  border-radius: 9999px !important;
-  overflow: hidden !important;
-  margin-top: 16px !important;
-}
-
-#${appId} .edu-progress-fill {
-  height: 100% !important;
-  background: var(--edu-accent, #3b82f6) !important;
-  width: 0% !important;
-  transition: width 0.3s ease !important;
-}
-
 #${appId} .edu-actions {
   display: flex !important;
   justify-content: space-between !important;
@@ -304,6 +329,27 @@ ${getLayoutCss(appId, settings.layoutMode, items.length)}
 #${appId} .edu-btn-reset:hover {
   background: var(--edu-card-bg, #ffffff) !important;
   color: var(--edu-heading, #0f172a) !important;
+  border-color: var(--edu-accent, #3b82f6) !important;
+}
+
+#${appId} .edu-audio-btn {
+  background: var(--edu-card-bg, #ffffff) !important;
+  border: 1px solid var(--edu-card-border, #cbd5e1) !important;
+  color: var(--edu-accent, #3b82f6) !important;
+  padding: 5px 9px !important;
+  border-radius: 6px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  transition: all 0.15s ease !important;
+  flex-shrink: 0 !important;
+}
+
+#${appId} .edu-audio-btn:hover {
+  background: var(--edu-badge-bg, #e0f2fe) !important;
   border-color: var(--edu-accent, #3b82f6) !important;
 }
 
@@ -340,8 +386,110 @@ ${settings.customCss || ''}
   var settings = ${settingsJson};
   var revealedIds = new Set();
   var activeItemId = null;
+  var currentAudio = null;
   var container = document.getElementById(appId);
   if (!container) return;
+
+  function formatEmbedVideoUrl(rawUrl) {
+    if (!rawUrl) return '';
+    var trimmed = rawUrl.trim();
+    var iframeMatch = trimmed.match(/src=["']([^"']+)["']/i);
+    if (iframeMatch && iframeMatch[1]) {
+      return formatEmbedVideoUrl(iframeMatch[1]);
+    }
+    var ytMatch = trimmed.match(/(?:youtube\\.com\\/(?:watch\\?v=|shorts\\/|embed\\/)|youtu\\.be\\/)([a-zA-Z0-9_-]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+      return 'https://www.youtube.com/embed/' + ytMatch[1];
+    }
+    var vimeoMatch = trimmed.match(/vimeo\\.com\\/(?:video\\/)?([0-9]+)/i);
+    if (vimeoMatch && vimeoMatch[1]) {
+      return 'https://player.vimeo.com/video/' + vimeoMatch[1];
+    }
+    return trimmed;
+  }
+
+  var isNarrating = false;
+  var isEnglish = (settings.narrationLanguage === 'en-US');
+  var listenText = isEnglish ? 'Listen' : 'Ouvir';
+  var stopText = isEnglish ? 'Stop' : 'Parar';
+
+  function stopNarration() {
+    isNarrating = false;
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    updateAudioBtnUi();
+  }
+
+  function updateAudioBtnUi() {
+    var btn = container.querySelector('.edu-audio-btn');
+    if (!btn) return;
+    if (isNarrating) {
+      btn.innerHTML = '<svg style="width:12px;height:12px;" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg><span>' + escapeHtml(stopText) + '</span>';
+      btn.setAttribute('title', stopText);
+      btn.style.borderColor = 'var(--edu-accent, #3b82f6)';
+      btn.style.backgroundColor = 'var(--edu-badge-bg, #e0f2fe)';
+    } else {
+      btn.innerHTML = '<svg style="width:12px;height:12px;" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span>' + escapeHtml(listenText) + '</span>';
+      btn.setAttribute('title', listenText);
+      btn.style.borderColor = 'var(--edu-card-border, #cbd5e1)';
+      btn.style.backgroundColor = 'var(--edu-card-bg, #ffffff)';
+    }
+  }
+
+  function playNarration(item) {
+    stopNarration();
+    if (!item) return;
+
+    isNarrating = true;
+    updateAudioBtnUi();
+
+    if (item.audioUrl && item.audioUrl.trim()) {
+      try {
+        currentAudio = new Audio(item.audioUrl.trim());
+        currentAudio.onended = function() {
+          isNarrating = false;
+          updateAudioBtnUi();
+        };
+        currentAudio.onerror = function() {
+          isNarrating = false;
+          updateAudioBtnUi();
+        };
+        currentAudio.play().catch(function(err) {
+          console.warn('Audio play failed:', err);
+          isNarrating = false;
+          updateAudioBtnUi();
+        });
+      } catch(err) {
+        console.warn(err);
+        isNarrating = false;
+        updateAudioBtnUi();
+      }
+    } else if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      var textToSpeak = item.title + '. ' + (item.subtitle ? item.subtitle + '. ' : '') + (item.details || item.imageCaption || '');
+      if (textToSpeak.trim()) {
+        var utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = settings.narrationLanguage || 'pt-BR';
+        utterance.rate = 1.0;
+        utterance.onend = function() {
+          isNarrating = false;
+          updateAudioBtnUi();
+        };
+        utterance.onerror = function() {
+          isNarrating = false;
+          updateAudioBtnUi();
+        };
+        window.speechSynthesis.speak(utterance);
+      } else {
+        isNarrating = false;
+        updateAudioBtnUi();
+      }
+    }
+  }
 
   // Sound Synth via Web Audio API (Zero external MP3 dependencies)
   function playSynthSound(type) {
@@ -457,8 +605,6 @@ ${settings.customCss || ''}
   function render() {
     var poolEl = container.querySelector('.edu-items-list');
     var dropzoneEl = container.querySelector('.edu-dropzone');
-    var progressFill = container.querySelector('.edu-progress-fill');
-    var progressText = container.querySelector('.edu-progress-text');
     var completionWrap = container.querySelector('.edu-completion-wrap');
 
     if (!poolEl || !dropzoneEl) return;
@@ -466,6 +612,9 @@ ${settings.customCss || ''}
     var showDot = settings.showAccentCircle === true;
     var useAccentBg = settings.useAccentAsBackground === true;
     var uniformCardTextColor = getUniformCardsTextColor(items, '#3b82f6');
+    var customClickedBg = settings.clickedCardColor || '#e2e8f0';
+    var customClickedContrast = settings.clickedCardTextColor || (getHexLuminance(customClickedBg) > 0.42 ? '#0f172a' : '#ffffff');
+    var isDarkClicked = customClickedContrast === '#ffffff';
 
     // Render cards pool
     poolEl.innerHTML = '';
@@ -492,43 +641,55 @@ ${settings.customCss || ''}
         card.style.setProperty('background-color', effectiveItemColor, 'important');
         card.style.setProperty('border-color', adjustBrightness(effectiveItemColor, -10), 'important');
         card.style.setProperty('color', contrastColor, 'important');
+      } else if (isItemActive || isItemRevealed) {
+        card.style.setProperty('background-color', customClickedBg, 'important');
+        card.style.setProperty('border-color', isItemActive ? 'var(--edu-accent, #3b82f6)' : adjustBrightness(customClickedBg, -18), 'important');
       }
 
       var dotHtml = showDot ? 
         '<div class="edu-card-dot" style="background-color:' + (useAccentBg ? (contrastColor === '#ffffff' ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.65)') : baseItemColor) + ' !important"></div>' 
         : '';
 
-      var badgeStyle = useAccentBg ? 
-        ' style="background-color:' + (contrastColor === '#ffffff' ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.1)') + ' !important; color:' + contrastColor + ' !important;"' 
-        : '';
+      var badgeBgStyle = useAccentBg
+        ? (contrastColor === '#ffffff' ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.1)')
+        : ((isItemActive || isItemRevealed) ? (isDarkClicked ? 'rgba(255,255,255,0.25)' : 'var(--edu-badge-bg, #e0f2fe)') : 'var(--edu-badge-bg, #e0f2fe)');
+      var badgeTextStyle = useAccentBg
+        ? contrastColor
+        : ((isItemActive || isItemRevealed) ? (isDarkClicked ? '#ffffff' : 'var(--edu-badge-text, #0369a1)') : 'var(--edu-badge-text, #0369a1)');
+
+      var badgeStyle = ' style="background-color:' + badgeBgStyle + ' !important; color:' + badgeTextStyle + ' !important;"';
+
+      var subtitleColor = useAccentBg
+        ? (contrastColor === '#ffffff' ? 'rgba(255,255,255,0.85)' : 'rgba(15,23,42,0.75)')
+        : ((isItemActive || isItemRevealed) ? (isDarkClicked ? 'rgba(255,255,255,0.85)' : 'var(--edu-card-revealed-muted, #475569)') : 'var(--edu-muted, #64748b)');
+
+      var titleColor = useAccentBg
+        ? contrastColor
+        : ((isItemActive || isItemRevealed) ? customClickedContrast : 'var(--edu-heading, #0f172a)');
 
       var subtitleHtml = item.subtitle ? 
-        '<div class="edu-card-subtitle" style="font-size:0.75rem; color:' + 
-        (useAccentBg ? (contrastColor === '#ffffff' ? 'rgba(255,255,255,0.85)' : 'rgba(15,23,42,0.75)') : 'var(--edu-muted, #64748b)') + 
-        ' !important;">' + escapeHtml(item.subtitle) + '</div>' : '';
+        '<div class="edu-card-subtitle" style="font-size:0.75rem; color:' + subtitleColor + ' !important;">' + escapeHtml(item.subtitle) + '</div>' : '';
 
       card.innerHTML = 
         '<div class="edu-card-left">' +
           dotHtml +
           '<div class="edu-card-text">' +
-            '<div class="edu-card-title" style="color:' + (useAccentBg ? contrastColor : 'var(--edu-heading, #0f172a)') + ' !important;">' + escapeHtml(item.title) + '</div>' +
+            '<div class="edu-card-title" style="color:' + titleColor + ' !important;">' + escapeHtml(item.title) + '</div>' +
             subtitleHtml +
           '</div>' +
         '</div>' +
         (item.badge ? '<span class="edu-card-badge"' + badgeStyle + '>' + escapeHtml(item.badge) + '</span>' : '');
 
-      // Bind click fallback
-      if (settings.allowClickToReveal) {
-        card.addEventListener('click', function() {
+      // Bind click and keyboard selection (always enabled for both mobile touch and desktop click)
+      card.addEventListener('click', function() {
+        selectItem(item.id);
+      });
+      card.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
           selectItem(item.id);
-        });
-        card.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            selectItem(item.id);
-          }
-        });
-      }
+        }
+      });
 
       // Bind Drag & Pointer Events
       setupCardPointerEvents(card, item.id);
@@ -544,22 +705,40 @@ ${settings.customCss || ''}
       if (cType === 'image-only') {
         if (activeItem.imageUrl) {
           dropzoneEl.classList.add('is-image-only');
+          dropzoneEl.classList.add('is-media-only');
           dropzoneEl.innerHTML = 
             '<img src="' + escapeHtml(activeItem.imageUrl) + '" alt="' + escapeHtml(activeItem.title) + '" />';
         } else {
           dropzoneEl.classList.remove('is-image-only');
+          dropzoneEl.classList.remove('is-media-only');
           dropzoneEl.innerHTML = 
             '<div class="edu-inspector-panel" style="text-align:center; padding:20px; color:var(--edu-muted); font-size:0.85rem;">' +
               'Insira a URL da imagem no editor deste item.' +
             '</div>';
         }
+      } else if (cType === 'video-only') {
+        if (activeItem.videoUrl) {
+          dropzoneEl.classList.add('is-media-only');
+          dropzoneEl.classList.remove('is-image-only');
+          var embedSrc = formatEmbedVideoUrl(activeItem.videoUrl);
+          dropzoneEl.innerHTML = 
+            '<iframe src="' + escapeHtml(embedSrc) + '" title="' + escapeHtml(activeItem.title) + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>';
+        } else {
+          dropzoneEl.classList.remove('is-image-only');
+          dropzoneEl.classList.remove('is-media-only');
+          dropzoneEl.innerHTML = 
+            '<div class="edu-inspector-panel" style="text-align:center; padding:20px; color:var(--edu-muted); font-size:0.85rem;">' +
+              'Insira a URL do vídeo ou código iframe no editor deste item.' +
+            '</div>';
+        }
       } else {
         dropzoneEl.classList.remove('is-image-only');
+        dropzoneEl.classList.remove('is-media-only');
         var bodyHtml = '';
 
         if ((cType === 'image' || cType === 'both') && activeItem.imageUrl) {
-          bodyHtml += '<div class="edu-inspector-img-wrap">' +
-            '<img src="' + escapeHtml(activeItem.imageUrl) + '" alt="' + escapeHtml(activeItem.imageCaption || activeItem.title) + '" class="edu-inspector-img" />' +
+          bodyHtml += '<div class="edu-inspector-img-wrap" style="background:transparent !important; border:none !important; padding:0 !important; margin:0 0 16px 0 !important;">' +
+            '<img src="' + escapeHtml(activeItem.imageUrl) + '" alt="' + escapeHtml(activeItem.imageCaption || activeItem.title) + '" class="edu-inspector-img" style="border-radius:12px !important; width:100% !important; max-height:380px !important; object-fit:cover !important;" />' +
             (activeItem.imageCaption ? '<div class="edu-inspector-caption">' + escapeHtml(activeItem.imageCaption) + '</div>' : '') +
           '</div>';
         }
@@ -568,6 +747,14 @@ ${settings.customCss || ''}
           bodyHtml += '<div class="edu-inspector-body">' + escapeHtml(activeItem.details) + '</div>';
         }
 
+        var audioBtnHtml = ((settings.enableNarration && activeItem.showNarrationButton !== false) || activeItem.audioUrl) ?
+          '<button type="button" class="edu-audio-btn" aria-label="' + (isNarrating ? escapeHtml(stopText) : escapeHtml(listenText)) + '" title="' + (isNarrating ? escapeHtml(stopText) : escapeHtml(listenText)) + '">' +
+            (isNarrating ?
+              '<svg style="width:12px;height:12px;" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg><span>' + escapeHtml(stopText) + '</span>' :
+              '<svg style="width:12px;height:12px;" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span>' + escapeHtml(listenText) + '</span>'
+            ) +
+          '</button>' : '';
+
         dropzoneEl.innerHTML = 
           '<div class="edu-inspector-panel">' +
             '<div class="edu-inspector-header">' +
@@ -575,10 +762,25 @@ ${settings.customCss || ''}
                 '<h3 class="edu-inspector-title">' + escapeHtml(activeItem.title) + '</h3>' +
                 (activeItem.subtitle ? '<p class="edu-inspector-sub">' + escapeHtml(activeItem.subtitle) + '</p>' : '') +
               '</div>' +
-              (activeItem.badge ? '<span class="edu-card-badge" style="font-size:0.8rem; padding:4px 10px;">' + escapeHtml(activeItem.badge) + '</span>' : '') +
+              '<div style="display:flex; align-items:center; gap:8px;">' +
+                audioBtnHtml +
+                (activeItem.badge ? '<span class="edu-card-badge" style="font-size:0.8rem; padding:4px 10px;">' + escapeHtml(activeItem.badge) + '</span>' : '') +
+              '</div>' +
             '</div>' +
             bodyHtml +
           '</div>';
+
+        var audioBtn = dropzoneEl.querySelector('.edu-audio-btn');
+        if (audioBtn) {
+          audioBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (isNarrating) {
+              stopNarration();
+            } else {
+              playNarration(activeItem);
+            }
+          });
+        }
       }
     } else {
       dropzoneEl.classList.remove('is-image-only');
@@ -593,10 +795,6 @@ ${settings.customCss || ''}
           '<div style="font-size: 0.85rem;">Clique em um item da lista para revelar suas informações completas.</div>' +
         '</div>';
     }
-
-    // Update progress
-    var progress = Math.round((revealedIds.size / items.length) * 100);
-    if (progressFill) progressFill.style.width = progress + '%';
 
     // Show completion banner
     if (completionWrap) {
@@ -619,6 +817,12 @@ ${settings.customCss || ''}
     playSynthSound('drop');
     if (revealedIds.size === items.length && isNew) {
       setTimeout(function() { playSynthSound('complete'); }, 200);
+    }
+    var foundItem = items.find(function(it) { return it.id === itemId; });
+    if (foundItem && settings.enableNarration && settings.narrationTrigger !== 'manual') {
+      playNarration(foundItem);
+    } else {
+      stopNarration();
     }
     render();
   }
@@ -690,6 +894,7 @@ ${settings.customCss || ''}
   var resetBtn = container.querySelector('.edu-btn-reset');
   if (resetBtn) {
     resetBtn.addEventListener('click', function() {
+      stopNarration();
       revealedIds.clear();
       activeItemId = null;
       render();
@@ -710,6 +915,8 @@ ${settings.customCss || ''}
 
   const hasTitle = Boolean(settings.title && settings.title.trim());
   const hasSubtitle = Boolean(settings.subtitle && settings.subtitle.trim());
+  const isEnglishNarration = Boolean(settings.enableNarration && settings.narrationLanguage === 'en-US');
+  const resetBtnText = isEnglishNarration ? 'Restart Activity' : 'Reiniciar Atividade';
 
   // HTML Markup Structure
   const htmlBody = `
@@ -723,9 +930,6 @@ ${settings.customCss || ''}
   <div class="edu-grid">
     <div class="edu-pool-container">
       <div class="edu-items-list"></div>
-      <div class="edu-progress-bar-wrap">
-        <div class="edu-progress-fill"></div>
-      </div>
     </div>
 
     <div>
@@ -733,7 +937,7 @@ ${settings.customCss || ''}
       <div class="edu-completion-wrap"></div>
       ${
         settings.showResetBtn
-          ? `<div class="edu-actions"><button class="edu-btn-reset" type="button">🔄 Reiniciar Atividade</button></div>`
+          ? `<div class="edu-actions"><button class="edu-btn-reset" type="button">🔄 ${escapeHtml(resetBtnText)}</button></div>`
           : ''
       }
     </div>
@@ -873,24 +1077,13 @@ function getLayoutCss(appId: string, layoutMode: string, itemsCount: number = 4)
   display: flex !important;
   flex-direction: column !important;
   gap: 10px !important;
-  min-height: 180px !important;
-  height: 100% !important;
-  justify-content: space-between !important;
+  width: 100% !important;
 }
 
 #${appId} .edu-card {
-  flex: 1 !important;
-  min-height: ${
-    itemsCount === 1
-      ? '96px'
-      : itemsCount === 2
-      ? '76px'
-      : itemsCount === 3
-      ? '64px'
-      : itemsCount === 4
-      ? '56px'
-      : '48px'
-  } !important;
+  height: 60px !important;
+  min-height: 60px !important;
+  max-height: 60px !important;
   box-sizing: border-box !important;
 }
 `;

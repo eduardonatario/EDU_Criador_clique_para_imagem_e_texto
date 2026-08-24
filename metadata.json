@@ -1,6 +1,6 @@
 {
-  "name": "Criador - Arrastar para imagem e texto",
-  "description": "Ferramenta interativa para criar componentes de 'arrastar para mais informações' com exportação de código HTML altamente compatível para embed em LMS, Moodle, Google Sites e e-learning.",
+  "name": "Criador de Clique para Ver o Conteúdo",
+  "description": "Ferramenta interativa para criar widgets educacionais multimídia com exportação de código HTML altamente compatível para embed em LMS, Moodle, Google Sites e e-learning.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

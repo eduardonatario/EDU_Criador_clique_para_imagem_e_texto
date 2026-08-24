@@ -38,8 +38,8 @@ export const THEME_CONFIGS: Record<ColorTheme, ThemeColors> = {
     cardHoverBorder: '#3b82f6',
     cardActiveBg: '#eff6ff',
     cardActiveBorder: '#3b82f6',
-    cardRevealedBg: '#f0fdf4',
-    cardRevealedBorder: '#86efac',
+    cardRevealedBg: '#e2e8f0',
+    cardRevealedBorder: '#cbd5e1',
     text: '#334155',
     heading: '#0f172a',
     muted: '#64748b',
@@ -351,18 +351,12 @@ export function getThemeCss(
   const theme = getTheme(themeId);
   const revealedBg = customClickedColor || theme.cardRevealedBg;
   const revealedBorder = adjustHexBrightness(revealedBg, -18);
-  const activeBg = adjustHexBrightness(revealedBg, 6);
-  const activeBorder = adjustHexBrightness(revealedBg, -24);
+  const activeBorder = theme.accent || '#3b82f6';
 
   const revealedText = customClickedTextColor || getContrastTextColor(revealedBg);
   const revealedMuted = customClickedTextColor
     ? (getHexLuminance(revealedBg) > 0.42 ? '#475569' : 'rgba(255, 255, 255, 0.85)')
     : getContrastMutedColor(revealedBg);
-
-  const activeText = customClickedTextColor || getContrastTextColor(activeBg);
-  const activeMuted = customClickedTextColor
-    ? (getHexLuminance(activeBg) > 0.42 ? '#475569' : 'rgba(255, 255, 255, 0.85)')
-    : getContrastMutedColor(activeBg);
 
   return `
 #${appId} {
@@ -380,10 +374,10 @@ export function getThemeCss(
   --edu-zone-text: ${theme.zoneText};
   --edu-badge-bg: ${theme.badgeBg};
   --edu-badge-text: ${theme.badgeText};
-  --edu-card-active: ${activeBg};
+  --edu-card-active: ${revealedBg};
   --edu-card-active-border: ${activeBorder};
-  --edu-card-active-text: ${activeText};
-  --edu-card-active-muted: ${activeMuted};
+  --edu-card-active-text: ${revealedText};
+  --edu-card-active-muted: ${revealedMuted};
   --edu-card-revealed: ${revealedBg};
   --edu-card-revealed-border: ${revealedBorder};
   --edu-card-revealed-text: ${revealedText};

@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ActivityItem, ActivitySettings } from '../types';
 import {
   RefreshCw,
-  MoveRight
+  Volume2,
+  VolumeX,
+  Play,
+  Square
 } from 'lucide-react';
 import { getTheme, getUniformCardsTextColor, getContrastTextColor, getAccentTone, adjustHexBrightness } from '../utils/themeConfig';
+import { formatEmbedVideoUrl } from './ItemEditor';
 
 interface PreviewCanvasProps {
   settings: ActivitySettings;
@@ -19,20 +23,84 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
   const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [isDropzoneHovered, setIsDropzoneHovered] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const theme = getTheme(settings.theme);
   const activeItem = items.find((i) => i.id === activeItemId);
   const uniformCardTextColor = getUniformCardsTextColor(items, theme.accent);
 
+  const stopAllAudio = () => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsPlayingAudio(false);
+  };
+
+  const playItemNarration = (item: ActivityItem) => {
+    stopAllAudio();
+
+    if (item.audioUrl && item.audioUrl.trim()) {
+      try {
+        const audio = new Audio(item.audioUrl.trim());
+        currentAudioRef.current = audio;
+        setIsPlayingAudio(true);
+        audio.onended = () => setIsPlayingAudio(false);
+        audio.onerror = () => {
+          console.warn('Audio playback failed for item:', item.id);
+          setIsPlayingAudio(false);
+        };
+        audio.play().catch((err) => {
+          console.warn('Playback error:', err);
+          setIsPlayingAudio(false);
+        });
+      } catch (e) {
+        console.warn(e);
+        setIsPlayingAudio(false);
+      }
+    } else if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const textToSpeak = `${item.title}. ${item.subtitle ? item.subtitle + '. ' : ''}${item.details || item.imageCaption || ''}`;
+      if (!textToSpeak.trim()) return;
+
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      utterance.lang = settings.narrationLanguage || 'pt-BR';
+      utterance.rate = 1.0;
+      utterance.onend = () => setIsPlayingAudio(false);
+      utterance.onerror = () => setIsPlayingAudio(false);
+
+      setIsPlayingAudio(true);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   const handleSelectItem = (id: string) => {
     setActiveItemId(id);
     setRevealedIds((prev) => new Set(prev).add(id));
+
+    const selected = items.find((i) => i.id === id);
+    if (selected && settings.enableNarration && settings.narrationTrigger !== 'manual') {
+      playItemNarration(selected);
+    } else {
+      stopAllAudio();
+    }
   };
 
   const handleReset = () => {
+    stopAllAudio();
     setActiveItemId(null);
     setRevealedIds(new Set());
   };
+
+  useEffect(() => {
+    return () => {
+      stopAllAudio();
+    };
+  }, []);
 
   return (
     <div className="bg-slate-100 rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm flex flex-col gap-4">
@@ -97,7 +165,7 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
               <div
                 className={
                   settings.layoutMode === 'inspector'
-                    ? 'flex flex-col gap-2.5 h-full justify-between'
+                    ? 'flex flex-col gap-2.5 w-full'
                     : items.length === 1
                     ? 'grid grid-cols-1 gap-3'
                     : items.length === 2
@@ -130,39 +198,33 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                   const cardState = isActive ? 'active' : isRevealed ? 'revealed' : 'initial';
                   const effectiveAccentBg = useAccentBg ? getAccentTone(baseAccentColor, cardState) : baseAccentColor;
                   const contrastText = useAccentBg ? uniformCardTextColor : theme.heading;
-                  const isInspector = settings.layoutMode === 'inspector';
 
-                  // Custom Click / Revealed color options
-                  const customClickedBg = settings.clickedCardColor || theme.cardRevealedBg || '#f0fdf4';
+                  // Custom Click / Revealed color options - direct user color application
+                  const customClickedBg = settings.clickedCardColor || theme.cardRevealedBg || '#e2e8f0';
                   const customClickedBorder = adjustHexBrightness(customClickedBg, -18);
                   const customClickedContrast = settings.clickedCardTextColor || getContrastTextColor(customClickedBg);
-                  const customActiveBg = adjustHexBrightness(customClickedBg, 4);
-                  const customActiveBorder = adjustHexBrightness(customClickedBg, -24);
 
                   // Colors when not using accent background
-                  const normalCardBg = isActive
-                    ? customActiveBg
-                    : isRevealed
-                    ? customClickedBg
-                    : theme.cardBg;
+                  const isClickedState = isActive || isRevealed;
+                  const normalCardBg = isClickedState ? customClickedBg : theme.cardBg;
                   const normalCardBorder = isActive
-                    ? customActiveBorder
+                    ? (theme.accent || '#3b82f6')
                     : isRevealed
                     ? customClickedBorder
                     : theme.cardBorder;
 
-                  const normalHeadingColor = (isActive || isRevealed)
+                  const normalHeadingColor = isClickedState
                     ? customClickedContrast
                     : theme.heading;
-                  const normalMutedColor = (isActive || isRevealed)
+                  const normalMutedColor = isClickedState
                     ? (customClickedContrast === '#ffffff' ? 'rgba(255, 255, 255, 0.85)' : '#475569')
                     : theme.muted;
 
                   const isDarkRevealed = customClickedContrast === '#ffffff';
-                  const normalBadgeBg = (isActive || isRevealed)
+                  const normalBadgeBg = isClickedState
                     ? (isDarkRevealed ? 'rgba(255, 255, 255, 0.25)' : theme.badgeBg)
                     : theme.badgeBg;
-                  const normalBadgeText = (isActive || isRevealed)
+                  const normalBadgeText = isClickedState
                     ? (isDarkRevealed ? '#ffffff' : theme.badgeText)
                     : theme.badgeText;
 
@@ -172,24 +234,8 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                       draggable
                       onDragStart={() => setDraggedItemId(item.id)}
                       onDragEnd={() => setDraggedItemId(null)}
-                      onClick={() => {
-                        if (settings.allowClickToReveal) {
-                          handleSelectItem(item.id);
-                        }
-                      }}
-                      className={`border rounded-xl cursor-grab active:cursor-grabbing transition-colors select-none flex items-center justify-between gap-2 shadow-xs ${
-                        isInspector
-                          ? items.length === 1
-                            ? 'p-4 min-h-[96px] flex-1'
-                            : items.length === 2
-                            ? 'p-3.5 min-h-[76px] flex-1'
-                            : items.length === 3
-                            ? 'p-3 min-h-[64px] flex-1'
-                            : items.length === 4
-                            ? 'p-3 min-h-[56px] flex-1'
-                            : 'p-2.5 min-h-[48px] flex-1'
-                          : 'p-3 min-h-[56px] h-full w-full'
-                      } ${
+                      onClick={() => handleSelectItem(item.id)}
+                      className={`border rounded-xl cursor-grab active:cursor-grabbing transition-all select-none flex items-center justify-between gap-2.5 px-3.5 py-2.5 h-[60px] min-h-[60px] max-h-[60px] w-full box-border shadow-xs ${
                         useAccentBg
                           ? isActive
                             ? 'ring-2 ring-offset-2 ring-blue-500 shadow-md'
@@ -197,7 +243,7 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                             ? 'shadow-xs opacity-90'
                             : 'hover:shadow-md'
                           : isActive
-                          ? 'ring-2 ring-offset-1 ring-blue-500/40 shadow-sm'
+                          ? 'ring-2 ring-offset-1 ring-blue-500 shadow-sm'
                           : isRevealed
                           ? 'shadow-xs'
                           : 'hover:shadow-md'
@@ -209,7 +255,7 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                         color: useAccentBg ? contrastText : theme.text,
                       }}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         {showCircle && (
                           <div
                             className="w-3 h-3 rounded-full flex-shrink-0"
@@ -222,18 +268,18 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                             }}
                           />
                         )}
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p
-                            className="text-xs font-bold truncate"
+                            className="text-xs font-bold truncate leading-tight"
                             style={{
                               color: useAccentBg ? contrastText : normalHeadingColor,
                             }}
                           >
                             {item.title}
                           </p>
-                          {item.subtitle && (
+                          {item.subtitle ? (
                             <p
-                              className="text-[11px] truncate"
+                              className="text-[11px] truncate leading-tight mt-0.5"
                               style={{
                                 color: useAccentBg
                                   ? contrastText === '#ffffff'
@@ -244,7 +290,7 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                             >
                               {item.subtitle}
                             </p>
-                          )}
+                          ) : null}
                         </div>
                       </div>
 
@@ -256,8 +302,8 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                               ? contrastText === '#ffffff'
                                 ? 'rgba(255, 255, 255, 0.22)'
                                 : 'rgba(0, 0, 0, 0.1)'
-                              : theme.badgeBg,
-                            color: useAccentBg ? contrastText : theme.badgeText,
+                              : normalBadgeBg,
+                            color: useAccentBg ? contrastText : normalBadgeText,
                           }}
                         >
                           {item.badge}
@@ -266,24 +312,6 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                     </div>
                   );
                 })}
-              </div>
-
-              {/* Progress Bar */}
-              <div
-                className="w-full h-1.5 rounded-full overflow-hidden mt-3"
-                style={{ backgroundColor: theme.progressTrackBg }}
-              >
-                <div
-                  className="h-full transition-all duration-300"
-                  style={{
-                    backgroundColor: theme.progressFillBg,
-                    width: `${
-                      items.length > 0
-                        ? (revealedIds.size / items.length) * 100
-                        : 0
-                    }%`,
-                  }}
-                />
               </div>
             </div>
 
@@ -310,8 +338,8 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                 }}
                 className={`min-h-[260px] ${
                   activeItem &&
-                  (activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'image-only' &&
-                  activeItem.imageUrl
+                  ((activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'image-only' && activeItem.imageUrl ||
+                   (activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'video-only' && activeItem.videoUrl)
                     ? 'p-0 overflow-hidden border-0'
                     : 'p-5 border border-solid'
                 } transition-colors flex flex-col items-center justify-center text-center ${
@@ -323,30 +351,30 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                   borderRadius: `${settings.borderRadius}px`,
                   backgroundColor:
                     activeItem &&
-                    (activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'image-only' &&
-                    activeItem.imageUrl
+                    (((activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'image-only' && activeItem.imageUrl) ||
+                     ((activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'video-only' && activeItem.videoUrl))
                       ? 'transparent'
                       : isDropzoneHovered
                       ? theme.zoneHoverBg
                       : theme.zoneBg,
                   borderColor:
                     activeItem &&
-                    (activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'image-only' &&
-                    activeItem.imageUrl
+                    (((activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'image-only' && activeItem.imageUrl) ||
+                     ((activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'video-only' && activeItem.videoUrl))
                       ? 'transparent'
                       : isDropzoneHovered
                       ? theme.accent
                       : theme.zoneBorder,
                   borderWidth:
                     activeItem &&
-                    (activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'image-only' &&
-                    activeItem.imageUrl
+                    (((activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'image-only' && activeItem.imageUrl) ||
+                     ((activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'video-only' && activeItem.videoUrl))
                       ? 0
                       : undefined,
                   borderStyle:
                     activeItem &&
-                    (activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'image-only' &&
-                    activeItem.imageUrl
+                    (((activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'image-only' && activeItem.imageUrl) ||
+                     ((activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'video-only' && activeItem.videoUrl))
                       ? 'none'
                       : 'solid',
                   color: theme.zoneText,
@@ -378,26 +406,90 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                         </div>
                       )}
                     </div>
+                  ) : (activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'video-only' ? (
+                    <div className="w-full h-full min-h-[260px] sm:min-h-[300px] flex flex-col items-center justify-center animate-fadeIn overflow-hidden">
+                      {activeItem.videoUrl ? (
+                        <iframe
+                          src={formatEmbedVideoUrl(activeItem.videoUrl, activeItem.videoAutoplay)}
+                          title={activeItem.title}
+                          className="w-full h-full min-h-[260px] sm:min-h-[320px] aspect-video border-0 block"
+                          style={{
+                            borderRadius: `${settings.borderRadius}px`,
+                            width: '100%',
+                            minHeight: '260px',
+                          }}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                        />
+                      ) : (
+                        <div
+                          className="text-center p-6 font-medium text-xs"
+                          style={{ color: theme.muted }}
+                        >
+                          Insira a URL do vídeo ou iframe no editor deste item para exibi-lo aqui.
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <div className="w-full text-left space-y-3 animate-fadeIn">
                       <div
-                        className="border-b pb-3"
+                        className="border-b pb-3 flex items-start justify-between gap-3"
                         style={{ borderColor: theme.zoneBorder }}
                       >
-                        <h3
-                          className="text-base font-bold"
-                          style={{ color: theme.heading }}
-                        >
-                          {activeItem.title}
-                        </h3>
-                        {activeItem.subtitle && (
-                          <p
-                            className="text-xs mt-0.5"
-                            style={{ color: theme.muted }}
+                        <div>
+                          <h3
+                            className="text-base font-bold"
+                            style={{ color: theme.heading }}
                           >
-                            {activeItem.subtitle}
-                          </p>
-                        )}
+                            {activeItem.title}
+                          </h3>
+                          {activeItem.subtitle && (
+                            <p
+                              className="text-xs mt-0.5"
+                              style={{ color: theme.muted }}
+                            >
+                              {activeItem.subtitle}
+                            </p>
+                          )}
+                        </div>
+
+                        {((settings.enableNarration && activeItem.showNarrationButton !== false) || Boolean(activeItem.audioUrl)) && (() => {
+                          const isEnglish = settings.narrationLanguage === 'en-US';
+                          const listenText = isEnglish ? 'Listen' : 'Ouvir';
+                          const stopText = isEnglish ? 'Stop' : 'Parar';
+
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (isPlayingAudio) {
+                                  stopAllAudio();
+                                } else {
+                                  playItemNarration(activeItem);
+                                }
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg border flex items-center gap-1.5 text-xs font-semibold transition cursor-pointer flex-shrink-0 shadow-2xs hover:opacity-90"
+                              style={{
+                                backgroundColor: isPlayingAudio ? theme.badgeBg : theme.cardBg,
+                                borderColor: isPlayingAudio ? theme.accent : theme.cardBorder,
+                                color: theme.accent,
+                              }}
+                              title={isPlayingAudio ? stopText : listenText}
+                            >
+                              {isPlayingAudio ? (
+                                <>
+                                  <Square className="w-3.5 h-3.5 fill-current" />
+                                  <span className="text-xs font-medium">{stopText}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Play className="w-3.5 h-3.5 fill-current" />
+                                  <span className="text-xs font-medium">{listenText}</span>
+                                </>
+                              )}
+                            </button>
+                          );
+                        })()}
                       </div>
 
                       {/* Conteúdo Revelado (Imagem + Legenda, Texto ou Ambos) */}
@@ -406,16 +498,12 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                           (activeItem.contentType || (activeItem.imageUrl ? 'image' : 'text')) === 'both') &&
                           activeItem.imageUrl && (
                             <figure
-                              className="my-2 p-2 rounded-xl border shadow-xs"
-                              style={{
-                                backgroundColor: theme.cardBg,
-                                borderColor: theme.cardBorder,
-                              }}
+                              className="my-2 p-0 rounded-xl overflow-hidden bg-transparent border-0"
                             >
                               <img
                                 src={activeItem.imageUrl}
                                 alt={activeItem.imageCaption || activeItem.title}
-                                className="w-full max-h-[360px] object-cover rounded-lg"
+                                className="w-full max-h-[380px] object-cover rounded-xl block"
                                 loading="lazy"
                                 referrerPolicy="no-referrer"
                                 onError={(e) => {
@@ -456,7 +544,6 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                         color: theme.accent,
                       }}
                     >
-                      <MoveRight className="w-6 h-6 animate-pulse" />
                     </div>
                     {settings.categoryTitle?.trim() && (
                       <p
@@ -484,28 +571,33 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
               )}
 
               {/* Reset button */}
-              {settings.showResetBtn && (
-                <div className="mt-4 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition"
-                    style={{
-                      backgroundColor: theme.resetBtnBg,
-                      color: theme.resetBtnText,
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.backgroundColor = theme.resetBtnHoverBg;
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.backgroundColor = theme.resetBtnBg;
-                    }}
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Reiniciar Atividade</span>
-                  </button>
-                </div>
-              )}
+              {settings.showResetBtn && (() => {
+                const isEnglish = Boolean(settings.enableNarration && settings.narrationLanguage === 'en-US');
+                const resetBtnText = isEnglish ? 'Restart Activity' : 'Reiniciar Atividade';
+
+                return (
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleReset}
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition"
+                      style={{
+                        backgroundColor: theme.resetBtnBg,
+                        color: theme.resetBtnText,
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.backgroundColor = theme.resetBtnHoverBg;
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.backgroundColor = theme.resetBtnBg;
+                      }}
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>{resetBtnText}</span>
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

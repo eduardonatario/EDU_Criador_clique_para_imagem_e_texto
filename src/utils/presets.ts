@@ -17,7 +17,7 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
       fontScale: 'md',
       showAccentCircle: false,
       useAccentAsBackground: false,
-      clickedCardColor: '#f0fdf4',
+      clickedCardColor: '#e2e8f0',
       enableSound: true,
       enableConfetti: true,
       showResetBtn: true,

@@ -1,4 +1,4 @@
-export type RevealContentType = 'text' | 'image-only' | 'image' | 'both';
+export type RevealContentType = 'text' | 'image-only' | 'video-only' | 'image' | 'both';
 
 export interface ActivityItem {
   id: string;
@@ -11,6 +11,10 @@ export interface ActivityItem {
   contentType?: RevealContentType;
   imageUrl?: string;
   imageCaption?: string;
+  videoUrl?: string; // URL do vídeo ou embed iframe
+  videoAutoplay?: boolean; // Iniciar vídeo automaticamente (autoplay) ou aguardar play manual
+  audioUrl?: string; // URL do áudio em MP3
+  showNarrationButton?: boolean; // Exibir botão de leitura/narração neste card (padrão true quando narração ativada)
   categoryId?: string;
 }
 
@@ -33,6 +37,9 @@ export type ColorTheme =
   | 'mint'
   | 'sunset';
 
+export type NarrationLanguage = 'pt-BR' | 'en-US';
+export type NarrationTrigger = 'auto' | 'manual';
+
 export interface ActivitySettings {
   title: string;
   subtitle: string;
@@ -48,7 +55,10 @@ export interface ActivitySettings {
   enableSound: boolean;
   enableConfetti: boolean;
   showResetBtn: boolean;
-  allowClickToReveal: boolean;
+  allowClickToReveal?: boolean;
+  enableNarration?: boolean; // Padrão: false (desabilitado inicialmente)
+  narrationLanguage?: NarrationLanguage; // 'pt-BR' | 'en-US', padrão 'pt-BR'
+  narrationTrigger?: NarrationTrigger; // 'auto' (ao clicar no card) ou 'manual' (apenas botão 'ouvir conteúdo')
   completionMessage: string;
   customCss: string;
 }

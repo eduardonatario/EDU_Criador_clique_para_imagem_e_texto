@@ -29,11 +29,14 @@ export default function App() {
     fontScale: defaultPreset.settings.fontScale || 'md',
     showAccentCircle: false,
     useAccentAsBackground: false,
-    clickedCardColor: '#f0fdf4',
+    clickedCardColor: '#e2e8f0',
     enableSound: true,
     enableConfetti: true,
     showResetBtn: true,
     allowClickToReveal: true,
+    enableNarration: false,
+    narrationLanguage: 'pt-BR',
+    narrationTrigger: 'auto',
     completionMessage: defaultPreset.settings.completionMessage || '',
     customCss: '',
   });
@@ -140,7 +143,7 @@ export default function App() {
 
             {/* Tab Content */}
             {activeTab === 'cards' ? (
-              <ItemEditor items={items} onUpdateItems={setItems} />
+              <ItemEditor items={items} onUpdateItems={setItems} settings={settings} />
             ) : (
               <SettingsPanel
                 settings={settings}

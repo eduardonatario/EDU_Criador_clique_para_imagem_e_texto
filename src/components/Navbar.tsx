@@ -31,11 +31,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-bold text-base tracking-tight text-slate-900">
-                Criador Arrastar para Mais
+                Criador de Clique para Ver o Conteúdo
               </h1>
             </div>
             <p className="text-xs text-slate-500 hidden sm:block">
-              Gerador de 'Arrastar para ver mais'
+              Criador de widget educacional multimídia
             </p>
           </div>
         </div>
