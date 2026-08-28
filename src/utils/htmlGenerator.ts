@@ -7,6 +7,9 @@ export function generateEmbeddedHtml(
   mode: 'standalone' | 'iframe_wrapper' | 'inline_label' = 'standalone'
 ): string {
   const appId = 'edu-drag-' + Math.random().toString(36).substring(2, 9);
+  const animSuffix = appId.replace(/-/g, '_');
+  const fadeInAnim = `eduFadeIn_${animSuffix}`;
+  const bounceInAnim = `eduBounceIn_${animSuffix}`;
 
   // Color theme palettes
   const themeStyles = getThemeCss(
@@ -19,9 +22,9 @@ export function generateEmbeddedHtml(
   const itemsJson = JSON.stringify(items);
   const settingsJson = JSON.stringify(settings);
 
-  // Standard inline CSS block scoped to #appId
+  // Standard inline CSS block scoped strictly to #appId with complete host isolation
   const cssStyles = `
-/* --- SCOPED CSS FOR MAXIMUM EMBED COMPATIBILITY --- */
+/* --- SCOPED CSS FOR MAXIMUM EMBED COMPATIBILITY & ZERO HOST STYLE INTERFERENCE --- */
 ${themeStyles}
 
 #${appId} {
@@ -39,12 +42,45 @@ ${themeStyles}
   line-height: 1.5 !important;
   text-align: left !important;
   -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
   position: relative !important;
   overflow: hidden !important;
+  contain: layout style;
 }
 
-#${appId} *, #${appId} *::before, #${appId} *::after {
+#${appId} *,
+#${appId} *::before,
+#${appId} *::after {
   box-sizing: border-box !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Reset host-inherited HTML tag styles */
+#${appId} h1, #${appId} h2, #${appId} h3, #${appId} h4, #${appId} p,
+#${appId} button, #${appId} img, #${appId} iframe, #${appId} figure,
+#${appId} div, #${appId} span, #${appId} svg {
+  box-sizing: border-box !important;
+  font-family: inherit !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  text-shadow: none !important;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+#${appId} button {
+  background: none;
+  cursor: pointer;
+  outline: none;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+#${appId} img {
+  max-width: 100% !important;
+  height: auto;
+  display: block;
 }
 
 #${appId} .edu-header {
@@ -57,12 +93,14 @@ ${themeStyles}
   font-weight: 700 !important;
   margin: 0 0 6px 0 !important;
   color: var(--edu-heading, #0f172a) !important;
+  line-height: 1.25 !important;
 }
 
 #${appId} .edu-subtitle {
   font-size: 0.95rem !important;
   color: var(--edu-muted, #64748b) !important;
   margin: 0 !important;
+  line-height: 1.4 !important;
 }
 
 ${getLayoutCss(appId, settings.layoutMode, items.length)}
@@ -248,7 +286,7 @@ ${getLayoutCss(appId, settings.layoutMode, items.length)}
 #${appId} .edu-inspector-panel {
   width: 100% !important;
   text-align: left !important;
-  animation: eduFadeIn 0.25s ease-out !important;
+  animation: ${fadeInAnim} 0.25s ease-out !important;
 }
 
 #${appId} .edu-inspector-header {
@@ -363,15 +401,15 @@ ${getLayoutCss(appId, settings.layoutMode, items.length)}
   font-weight: 600 !important;
   text-align: center !important;
   margin-top: 16px !important;
-  animation: eduBounceIn 0.4s ease-out !important;
+  animation: ${bounceInAnim} 0.4s ease-out !important;
 }
 
-@keyframes eduFadeIn {
+@keyframes ${fadeInAnim} {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes eduBounceIn {
+@keyframes ${bounceInAnim} {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
@@ -390,20 +428,31 @@ ${settings.customCss || ''}
   var container = document.getElementById(appId);
   if (!container) return;
 
-  function formatEmbedVideoUrl(rawUrl) {
+  function formatEmbedVideoUrl(rawUrl, autoplay) {
     if (!rawUrl) return '';
     var trimmed = rawUrl.trim();
     var iframeMatch = trimmed.match(/src=["']([^"']+)["']/i);
     if (iframeMatch && iframeMatch[1]) {
-      return formatEmbedVideoUrl(iframeMatch[1]);
+      return formatEmbedVideoUrl(iframeMatch[1], autoplay);
     }
     var ytMatch = trimmed.match(/(?:youtube\\.com\\/(?:watch\\?v=|shorts\\/|embed\\/)|youtu\\.be\\/)([a-zA-Z0-9_-]{11})/i);
     if (ytMatch && ytMatch[1]) {
-      return 'https://www.youtube.com/embed/' + ytMatch[1];
+      var ytEmbed = 'https://www.youtube.com/embed/' + ytMatch[1];
+      if (autoplay) ytEmbed += '?autoplay=1';
+      return ytEmbed;
     }
     var vimeoMatch = trimmed.match(/vimeo\\.com\\/(?:video\\/)?([0-9]+)/i);
     if (vimeoMatch && vimeoMatch[1]) {
-      return 'https://player.vimeo.com/video/' + vimeoMatch[1];
+      var vimeoEmbed = 'https://player.vimeo.com/video/' + vimeoMatch[1];
+      if (autoplay) vimeoEmbed += '?autoplay=1';
+      return vimeoEmbed;
+    }
+    if (autoplay) {
+      if (trimmed.indexOf('autoplay=') === -1) {
+        trimmed += (trimmed.indexOf('?') !== -1 ? '&' : '?') + 'autoplay=1';
+      }
+    } else {
+      trimmed = trimmed.replace(/([?&])autoplay=1(&|$)/, '$1').replace(/[?&]$/, '');
     }
     return trimmed;
   }
@@ -720,7 +769,7 @@ ${settings.customCss || ''}
         if (activeItem.videoUrl) {
           dropzoneEl.classList.add('is-media-only');
           dropzoneEl.classList.remove('is-image-only');
-          var embedSrc = formatEmbedVideoUrl(activeItem.videoUrl);
+          var embedSrc = formatEmbedVideoUrl(activeItem.videoUrl, activeItem.videoAutoplay);
           dropzoneEl.innerHTML = 
             '<iframe src="' + escapeHtml(embedSrc) + '" title="' + escapeHtml(activeItem.title) + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>';
         } else {

@@ -553,71 +553,71 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({
                     </div>
                   )}
 
-                  {/* Campo de Áudio MP3 / Narração */}
-                  <div className="border-t border-slate-100 pt-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
-                        <Music className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Áudio em MP3 (Opcional)</span>
-                      </label>
-                      <span className="text-[10px] text-slate-400">
-                        {settings?.enableNarration ? 'Narração ativa nas configurações' : 'Ative nas configurações para tocar ao clicar'}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <div className="relative flex-1">
-                        <input
-                          type="url"
-                          value={item.audioUrl || ''}
-                          onChange={(e) =>
-                            handleUpdateItem(item.id, { audioUrl: e.target.value })
-                          }
-                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
-                          placeholder="https://exemplo.com/audio-explicativo.mp3"
-                        />
+                  {/* Campo de Áudio MP3 / Narração (exibido apenas se a narração estiver ativa nas configurações) */}
+                  {settings?.enableNarration && (
+                    <div className="border-t border-slate-100 pt-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
+                          <Music className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Áudio em MP3 (Opcional)</span>
+                        </label>
+                        <span className="text-[10px] text-emerald-600 font-medium">
+                          Narração ativa nas configurações
+                        </span>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleTestItemAudio(item)}
-                        className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition flex-shrink-0 cursor-pointer ${
-                          playingAudioId === item.id
-                            ? 'bg-amber-50 border-amber-300 text-amber-800 animate-pulse'
-                            : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
-                        }`}
-                        title={
-                          item.audioUrl
-                            ? 'Ouvir arquivo MP3'
-                            : `Ouvir sintetizador de voz (${settings?.narrationLanguage === 'en-US' ? 'Inglês' : 'Português'})`
-                        }
-                      >
-                        {playingAudioId === item.id ? (
-                          <>
-                            <Square className="w-3.5 h-3.5 fill-amber-700 text-amber-700" />
-                            <span>Parar</span>
-                          </>
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="url"
+                            value={item.audioUrl || ''}
+                            onChange={(e) =>
+                              handleUpdateItem(item.id, { audioUrl: e.target.value })
+                            }
+                            className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                            placeholder="https://exemplo.com/audio-explicativo.mp3"
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleTestItemAudio(item)}
+                          className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition flex-shrink-0 cursor-pointer ${
+                            playingAudioId === item.id
+                              ? 'bg-amber-50 border-amber-300 text-amber-800 animate-pulse'
+                              : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                          }`}
+                          title={
+                            item.audioUrl
+                              ? 'Ouvir arquivo MP3'
+                              : `Ouvir sintetizador de voz (${settings?.narrationLanguage === 'en-US' ? 'Inglês' : 'Português'})`
+                          }
+                        >
+                          {playingAudioId === item.id ? (
+                            <>
+                              <Square className="w-3.5 h-3.5 fill-amber-700 text-amber-700" />
+                              <span>Parar</span>
+                            </>
+                          ) : (
+                            <>
+                              <Play className="w-3.5 h-3.5 text-blue-600" />
+                              <span>{item.audioUrl ? 'Testar MP3' : 'Ouvir Voz'}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      <p className="text-[10px] text-slate-400 leading-tight">
+                        {item.audioUrl ? (
+                          <span className="text-emerald-700 font-medium">✓ Arquivo MP3 personalizado configurado para este card.</span>
                         ) : (
-                          <>
-                            <Play className="w-3.5 h-3.5 text-blue-600" />
-                            <span>{item.audioUrl ? 'Testar MP3' : 'Ouvir Voz'}</span>
-                          </>
+                          <span>
+                            Se vazio e a leitura estiver ativa nas configurações, o sistema lerá o texto via síntese de voz em{' '}
+                            <strong>{settings?.narrationLanguage === 'en-US' ? 'Inglês' : 'Português'}</strong>.
+                          </span>
                         )}
-                      </button>
-                    </div>
+                      </p>
 
-                    <p className="text-[10px] text-slate-400 leading-tight">
-                      {item.audioUrl ? (
-                        <span className="text-emerald-700 font-medium">✓ Arquivo MP3 personalizado configurado para este card.</span>
-                      ) : (
-                        <span>
-                          Se vazio e a leitura estiver ativa nas configurações, o sistema lerá o texto via síntese de voz em{' '}
-                          <strong>{settings?.narrationLanguage === 'en-US' ? 'Inglês' : 'Português'}</strong>.
-                        </span>
-                      )}
-                    </p>
-
-                    {settings?.enableNarration && (
                       <div className="pt-2 flex items-center justify-between border-t border-slate-100 mt-2">
                         <span className="text-[11px] text-slate-700 font-medium">Exibir botão de leitura neste card</span>
                         <input
@@ -627,8 +627,8 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({
                           className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
                         />
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
