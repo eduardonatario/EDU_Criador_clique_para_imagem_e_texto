@@ -55,6 +55,7 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
           console.warn('Audio playback failed for item:', item.id);
           setIsPlayingAudio(false);
         };
+        audio.onpause = () => setIsPlayingAudio(false);
         audio.play().catch((err) => {
           console.warn('Playback error:', err);
           setIsPlayingAudio(false);
@@ -67,14 +68,21 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
       const textToSpeak = `${item.title}. ${item.subtitle ? item.subtitle + '. ' : ''}${item.details || item.imageCaption || ''}`;
       if (!textToSpeak.trim()) return;
 
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      utterance.lang = settings.narrationLanguage || 'pt-BR';
-      utterance.rate = 1.0;
-      utterance.onend = () => setIsPlayingAudio(false);
-      utterance.onerror = () => setIsPlayingAudio(false);
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = settings.narrationLanguage || 'pt-BR';
+        utterance.rate = 1.0;
+        utterance.onstart = () => setIsPlayingAudio(true);
+        utterance.onend = () => setIsPlayingAudio(false);
+        utterance.onerror = () => setIsPlayingAudio(false);
 
-      setIsPlayingAudio(true);
-      window.speechSynthesis.speak(utterance);
+        setIsPlayingAudio(true);
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.warn(e);
+        setIsPlayingAudio(false);
+      }
     }
   };
 
@@ -453,7 +461,7 @@ export const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                           )}
                         </div>
 
-                        {((settings.enableNarration && activeItem.showNarrationButton !== false) || Boolean(activeItem.audioUrl)) && (() => {
+                        {(settings.enableNarration || Boolean(activeItem.audioUrl) || isPlayingAudio) && (() => {
                           const isEnglish = settings.narrationLanguage === 'en-US';
                           const listenText = isEnglish ? 'Listen' : 'Ouvir';
                           const stopText = isEnglish ? 'Stop' : 'Parar';

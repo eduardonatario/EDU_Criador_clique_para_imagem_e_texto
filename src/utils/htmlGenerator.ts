@@ -508,6 +508,10 @@ ${settings.customCss || ''}
           isNarrating = false;
           updateAudioBtnUi();
         };
+        currentAudio.onpause = function() {
+          isNarrating = false;
+          updateAudioBtnUi();
+        };
         currentAudio.play().catch(function(err) {
           console.warn('Audio play failed:', err);
           isNarrating = false;
@@ -521,18 +525,28 @@ ${settings.customCss || ''}
     } else if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       var textToSpeak = item.title + '. ' + (item.subtitle ? item.subtitle + '. ' : '') + (item.details || item.imageCaption || '');
       if (textToSpeak.trim()) {
-        var utterance = new SpeechSynthesisUtterance(textToSpeak);
-        utterance.lang = settings.narrationLanguage || 'pt-BR';
-        utterance.rate = 1.0;
-        utterance.onend = function() {
+        try {
+          window.speechSynthesis.cancel();
+          var utterance = new SpeechSynthesisUtterance(textToSpeak);
+          utterance.lang = settings.narrationLanguage || 'pt-BR';
+          utterance.rate = 1.0;
+          utterance.onstart = function() {
+            isNarrating = true;
+            updateAudioBtnUi();
+          };
+          utterance.onend = function() {
+            isNarrating = false;
+            updateAudioBtnUi();
+          };
+          utterance.onerror = function() {
+            isNarrating = false;
+            updateAudioBtnUi();
+          };
+          window.speechSynthesis.speak(utterance);
+        } catch(e) {
           isNarrating = false;
           updateAudioBtnUi();
-        };
-        utterance.onerror = function() {
-          isNarrating = false;
-          updateAudioBtnUi();
-        };
-        window.speechSynthesis.speak(utterance);
+        }
       } else {
         isNarrating = false;
         updateAudioBtnUi();
@@ -558,15 +572,6 @@ ${settings.customCss || ''}
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
         osc.start();
         osc.stop(ctx.currentTime + 0.12);
-      } else if (type === 'complete') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
-        osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.4);
       }
     } catch(e){}
   }
@@ -796,7 +801,7 @@ ${settings.customCss || ''}
           bodyHtml += '<div class="edu-inspector-body">' + escapeHtml(activeItem.details) + '</div>';
         }
 
-        var audioBtnHtml = ((settings.enableNarration && activeItem.showNarrationButton !== false) || activeItem.audioUrl) ?
+        var audioBtnHtml = (settings.enableNarration || Boolean(activeItem.audioUrl) || isNarrating) ?
           '<button type="button" class="edu-audio-btn" aria-label="' + (isNarrating ? escapeHtml(stopText) : escapeHtml(listenText)) + '" title="' + (isNarrating ? escapeHtml(stopText) : escapeHtml(listenText)) + '">' +
             (isNarrating ?
               '<svg style="width:12px;height:12px;" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg><span>' + escapeHtml(stopText) + '</span>' :
@@ -860,20 +865,16 @@ ${settings.customCss || ''}
   }
 
   function selectItem(itemId) {
-    var isNew = !revealedIds.has(itemId);
     activeItemId = itemId;
     revealedIds.add(itemId);
     playSynthSound('drop');
-    if (revealedIds.size === items.length && isNew) {
-      setTimeout(function() { playSynthSound('complete'); }, 200);
-    }
     var foundItem = items.find(function(it) { return it.id === itemId; });
+    render();
     if (foundItem && settings.enableNarration && settings.narrationTrigger !== 'manual') {
       playNarration(foundItem);
     } else {
       stopNarration();
     }
-    render();
   }
 
   // Pointer Events Unified Drag Engine

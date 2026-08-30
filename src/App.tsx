@@ -36,7 +36,7 @@ export default function App() {
     allowClickToReveal: true,
     enableNarration: false,
     narrationLanguage: 'pt-BR',
-    narrationTrigger: 'auto',
+    narrationTrigger: 'manual',
     completionMessage: defaultPreset.settings.completionMessage || '',
     customCss: '',
   });

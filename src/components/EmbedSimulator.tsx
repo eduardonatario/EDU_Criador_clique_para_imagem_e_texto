@@ -6,8 +6,7 @@ import {
   Download,
   Copy,
   Check,
-  Play,
-  X,
+  ArrowLeft,
 } from 'lucide-react';
 
 interface EmbedSimulatorProps {
@@ -51,24 +50,24 @@ export const EmbedSimulator: React.FC<EmbedSimulatorProps> = ({
             </div>
           </div>
 
-          {/* Right Actions: 1) Preview (Fechar), 2) Copiar HTML, 3) Baixar HTML, 4) Fechar */}
+          {/* Right Actions: 1) Voltar para configuração, 2) Copiar HTML, 3) Baixar HTML */}
           <div className="flex items-center gap-2">
-            {/* 1. Preview Button (clicar fecha o preview ou volta ao editor) */}
+            {/* 1. Voltar para configuração */}
             <button
               type="button"
               onClick={onClose}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition"
-              title="Voltar ao editor"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300 shadow-xs transition cursor-pointer"
+              title="Voltar para configuração"
             >
-              <Play className="w-3.5 h-3.5 fill-current text-white" />
-              <span>Preview</span>
+              <ArrowLeft className="w-3.5 h-3.5 text-slate-700" />
+              <span>Voltar para configuração</span>
             </button>
 
             {/* 2. Copiar HTML */}
             <button
               type="button"
               onClick={onCopyHtml}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition cursor-pointer"
               title="Copiar código HTML completo para a área de transferência"
             >
               {isCopied ? (
@@ -88,21 +87,11 @@ export const EmbedSimulator: React.FC<EmbedSimulatorProps> = ({
             <button
               type="button"
               onClick={onDownloadHtml}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-700 hover:bg-blue-800 text-white shadow-md shadow-blue-700/20 transition"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-700 hover:bg-blue-800 text-white shadow-md shadow-blue-700/20 transition cursor-pointer"
               title="Baixar arquivo HTML completo pronto para uso"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Baixar HTML</span>
-            </button>
-
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-200 transition ml-1"
-              title="Fechar Preview"
-            >
-              <X className="w-5 h-5" />
             </button>
           </div>
         </div>

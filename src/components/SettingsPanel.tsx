@@ -32,15 +32,9 @@ interface SettingsPanelProps {
 }
 
 const CLICKED_COLOR_PRESETS = [
-  { name: 'Cinza Neutro (Padrão)', value: '#e2e8f0', border: '#cbd5e1' },
-  { name: 'Grafite Escuro', value: '#1e293b', border: '#0f172a' },
-  { name: 'Slate Médio', value: '#64748b', border: '#475569' },
-  { name: 'Azul Marinho Escuro', value: '#1e3a8a', border: '#172554' },
-  { name: 'Azul Claro', value: '#eff6ff', border: '#93c5fd' },
-  { name: 'Verde Floresta Escuro', value: '#065f46', border: '#064e3b' },
-  { name: 'Verde Claro', value: '#f0fdf4', border: '#86efac' },
-  { name: 'Lilás Escuro', value: '#581c87', border: '#3b0764' },
-  { name: 'Âmbar Suave', value: '#fffbeb', border: '#fde68a' },
+  { name: 'Cinza texto escuro', value: '#e2e8f0', border: '#cbd5e1' },
+  { name: 'Azul claro texto escuro', value: '#eff6ff', border: '#93c5fd' },
+  { name: 'Ambar suave texto escuro', value: '#fffbeb', border: '#fde68a' },
 ];
 
 const LAYOUTS: {
@@ -209,7 +203,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       {/* Cor do Card ao Clicar / Revelado */}
       <div className="border-t border-slate-100 pt-3">
-        <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center justify-between mb-2">
           <label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-blue-600" />
             <span>Cor do Card ao Clicar / Revelar</span>
@@ -223,12 +217,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </span>
           </div>
         </div>
-        <p className="text-[10px] text-slate-500 mb-2.5">
-          Escolha a tonalidade de preenchimento e do texto ao clicar. Cores escuras utilizam texto em branco automaticamente para garantir leitura e alto contraste.
-        </p>
 
         {/* Chips de cores pré-definidas com amostra de texto e contraste */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 mb-2.5">
           {CLICKED_COLOR_PRESETS.map((preset) => {
             const currentVal = (settings.clickedCardColor || '#e2e8f0').toLowerCase();
             const isSelected = currentVal === preset.value.toLowerCase();
@@ -395,46 +386,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </button>
             </div>
           </div>
-
-          {/* Amostra em Tempo Real */}
-          <div
-            className="mt-2 p-2 rounded-lg border flex items-center justify-between transition-colors shadow-2xs"
-            style={{
-              backgroundColor: settings.clickedCardColor || '#e2e8f0',
-              borderColor: '#cbd5e1',
-              color: settings.clickedCardTextColor || (getHexLuminance(settings.clickedCardColor || '#e2e8f0') > 0.42 ? '#0f172a' : '#ffffff'),
-            }}
-          >
-            <div>
-              <p
-                className="text-[11px] font-bold leading-tight"
-                style={{
-                  color: settings.clickedCardTextColor || (getHexLuminance(settings.clickedCardColor || '#e2e8f0') > 0.42 ? '#0f172a' : '#ffffff'),
-                }}
-              >
-                Card Clicado (Exemplo de Legibilidade)
-              </p>
-              <p
-                className="text-[9px] leading-tight opacity-80"
-                style={{
-                  color: settings.clickedCardTextColor || (getHexLuminance(settings.clickedCardColor || '#e2e8f0') > 0.42 ? '#475569' : 'rgba(255, 255, 255, 0.85)'),
-                }}
-              >
-                Subtítulo com contraste nítido garantido
-              </p>
-            </div>
-            <span
-              className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-              style={{
-                backgroundColor: (settings.clickedCardTextColor === '#ffffff' || getHexLuminance(settings.clickedCardColor || '#e2e8f0') <= 0.42)
-                  ? 'rgba(255, 255, 255, 0.2)'
-                  : 'rgba(0, 0, 0, 0.08)',
-                color: settings.clickedCardTextColor || (getHexLuminance(settings.clickedCardColor || '#e2e8f0') > 0.42 ? '#0f172a' : '#ffffff'),
-              }}
-            >
-              Ativo
-            </span>
-          </div>
         </div>
       </div>
 
@@ -490,7 +441,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <div>
               <p className="font-semibold text-slate-800">Efeitos de Áudio Sintetizados na interface</p>
               <p className="text-[10px] text-slate-500">
-                Sons suaves de 'pop' e vitória usando Web Audio API nativa
+                Sons suaves de clique ao interagir com os cards via Web Audio API nativa
               </p>
             </div>
           </div>
@@ -537,7 +488,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <input
               type="checkbox"
               checked={Boolean(settings.enableNarration)}
-              onChange={(e) => handleChange({ enableNarration: e.target.checked })}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                handleChange({
+                  enableNarration: checked,
+                  narrationTrigger: settings.narrationTrigger || 'manual',
+                });
+              }}
               className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
             />
           </label>
@@ -553,7 +510,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => handleChange({ narrationLanguage: 'pt-BR' })}
+                    onClick={() =>
+                      handleChange({
+                        narrationLanguage: 'pt-BR',
+                        narrationTrigger: settings.narrationTrigger || 'manual',
+                      })
+                    }
                     className={`py-2 px-3 rounded-lg border text-left flex items-center justify-between transition cursor-pointer ${
                       (settings.narrationLanguage || 'pt-BR') === 'pt-BR'
                         ? 'border-blue-600 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-500'
@@ -571,7 +533,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => handleChange({ narrationLanguage: 'en-US' })}
+                    onClick={() =>
+                      handleChange({
+                        narrationLanguage: 'en-US',
+                        narrationTrigger: settings.narrationTrigger || 'manual',
+                      })
+                    }
                     className={`py-2 px-3 rounded-lg border text-left flex items-center justify-between transition cursor-pointer ${
                       settings.narrationLanguage === 'en-US'
                         ? 'border-blue-600 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-500'
@@ -600,7 +567,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     type="button"
                     onClick={() => handleChange({ narrationTrigger: 'auto' })}
                     className={`p-2.5 rounded-lg border text-left transition cursor-pointer flex flex-col justify-between ${
-                      (settings.narrationTrigger || 'auto') === 'auto'
+                      settings.narrationTrigger === 'auto'
                         ? 'border-blue-600 bg-blue-50/70 text-blue-900 ring-1 ring-blue-500'
                         : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                     }`}
@@ -610,7 +577,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         <Volume2 className="w-3.5 h-3.5 text-blue-600" />
                         <span>Leitura Automática</span>
                       </div>
-                      {(settings.narrationTrigger || 'auto') === 'auto' && (
+                      {settings.narrationTrigger === 'auto' && (
                         <CheckCircle className="w-3.5 h-3.5 text-blue-600" />
                       )}
                     </div>
@@ -623,7 +590,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     type="button"
                     onClick={() => handleChange({ narrationTrigger: 'manual' })}
                     className={`p-2.5 rounded-lg border text-left transition cursor-pointer flex flex-col justify-between ${
-                      settings.narrationTrigger === 'manual'
+                      (settings.narrationTrigger || 'manual') === 'manual'
                         ? 'border-blue-600 bg-blue-50/70 text-blue-900 ring-1 ring-blue-500'
                         : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                     }`}
@@ -633,7 +600,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         <Play className="w-3.5 h-3.5 text-blue-600" />
                         <span>Botão '{settings.narrationLanguage === 'en-US' ? 'Listen' : 'Ouvir'}'</span>
                       </div>
-                      {settings.narrationTrigger === 'manual' && (
+                      {(settings.narrationTrigger || 'manual') === 'manual' && (
                         <CheckCircle className="w-3.5 h-3.5 text-blue-600" />
                       )}
                     </div>
